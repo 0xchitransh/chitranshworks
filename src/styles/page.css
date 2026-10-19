@@ -1,0 +1,110 @@
+/* Standard (non-3D) portfolio layout */
+.page {
+  min-height: 100%;
+  background:
+    radial-gradient(900px 500px at 85% -10%, rgba(232, 117, 53, 0.14), transparent 60%),
+    radial-gradient(700px 400px at 0% 20%, rgba(36, 23, 15, 0.9), transparent 70%), var(--charcoal);
+}
+.page__header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px clamp(16px, 4vw, 48px);
+  background: rgba(11, 11, 13, 0.86);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line);
+}
+.page__brand {
+  font-family: var(--font-script);
+  font-size: 40px;
+  line-height: 1;
+}
+.page__nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  justify-content: center;
+}
+.page__nav button {
+  min-height: 44px;
+  padding: 0 12px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.page__nav button:hover {
+  color: var(--cream);
+}
+.page__main {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 0 clamp(16px, 4vw, 32px) 80px;
+}
+.page__hero {
+  padding: clamp(56px, 12vw, 120px) 0 64px;
+}
+.page__name {
+  font-family: var(--font-script);
+  font-weight: 400;
+  font-size: clamp(76px, 15vw, 160px);
+  line-height: 0.9;
+  margin-top: 14px;
+}
+.page__tagline {
+  margin-top: 16px;
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: clamp(26px, 4vw, 38px);
+  color: var(--amber);
+}
+.page__headline {
+  margin-top: 22px;
+  max-width: 34ch;
+  font-size: clamp(18px, 2.4vw, 22px);
+  line-height: 1.45;
+}
+.page__desc {
+  margin-top: 12px;
+  max-width: 52ch;
+  color: var(--ink-2);
+}
+.page__roles {
+  margin-top: 22px;
+  font-size: 12px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.page__section {
+  padding: 56px 0;
+  border-top: 1px solid var(--line);
+  scroll-margin-top: 72px;
+  outline: none;
+}
+.page__footer {
+  padding: 32px clamp(16px, 4vw, 48px);
+  text-align: center;
+  font-size: 13px;
+  color: var(--muted);
+  border-top: 1px solid var(--line);
+}
+.page .project-list {
+  max-width: 100%;
+}
+@media (max-width: 760px) {
+  .page__header {
+    flex-direction: column;
+    align-items: flex-start;
+    padding-bottom: 4px;
+  }
+  .page__nav {
+    justify-content: flex-start;
+    margin-left: -12px;
+  }
+}

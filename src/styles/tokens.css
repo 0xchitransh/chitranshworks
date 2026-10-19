@@ -1,0 +1,23 @@
+:root {
+  --charcoal: #0b0b0d;
+  --walnut: #24170f;
+  --orange: #e87535;
+  --amber: #dca45b;
+  --cream: #f1e9db;
+  --muted: #92908b;
+
+  --ink-2: #cfc8bb;
+  --line: rgba(241, 233, 219, 0.12);
+  --line-strong: rgba(241, 233, 219, 0.24);
+  --surface: rgba(255, 255, 255, 0.03);
+
+  --font-serif: 'Cormorant Garamond', 'Iowan Old Style', Georgia, serif;
+  --font-sans: 'Inter Variable', Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+  --font-script: 'Mrs Saint Delafield', 'Snell Roundhand', cursive;
+
+  --rail-w: 236px;
+  --panel-w: min(560px, 42vw);
+
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
