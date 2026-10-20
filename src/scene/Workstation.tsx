@@ -6,6 +6,7 @@ import { useStage } from '../store/useStage'
 import { HoverGlow, Interactive } from './InteractiveHotspot'
 import { getMaterials } from './materials'
 import { Box, Cyl } from './primitives'
+import { mood } from './mood'
 import { makeCanvas, labelTexture } from './textures'
 
 const W = 1024
@@ -79,6 +80,8 @@ function drawScreen(ctx: CanvasRenderingContext2D, caret: boolean, active: boole
 export function Workstation() {
   const m = getMaterials()
   const focused = useStage((s) => s.section === 'projects')
+  const lamp = useRef<THREE.PointLight>(null)
+  const glow = useRef<THREE.PointLight>(null)
   const blink = useRef(0)
   const caret = useRef(true)
 
@@ -133,6 +136,11 @@ export function Workstation() {
   }, [focused, screen])
 
   useFrame((_, dt) => {
+    // The desk wakes up as the camera approaches it: brighter screen, warmer pool under the lamp.
+    const a = Math.max(mood.area.desk, focused ? 1 : 0)
+    screen.mat.color.setScalar(0.74 + 0.26 * a)
+    if (lamp.current) lamp.current.intensity = 1.5 + 1.1 * a
+    if (glow.current) glow.current.intensity = 0.5 + 1.3 * a
     if (useStage.getState().reducedMotion) return
     blink.current += dt
     if (blink.current > 0.55) {
@@ -181,8 +189,8 @@ export function Workstation() {
         <Cyl r={0.07} r2={0.025} h={0.1} pos={[0.2, 0.5, 0]} rot={[0, 0, 0.3]} mat={m.blackMetal} />
         <Cyl r={0.03} h={0.02} pos={[0.2, 0.44, 0]} mat={m.warmEmit} cast={false} />
       </group>
-      <pointLight position={[4.5, 1.25, -3.5]} color="#ffb870" intensity={1.8} distance={2.6} decay={2} />
-      <pointLight position={[3.4, 1.32, -3.0]} color="#e5d6c0" intensity={0.8} distance={2} decay={2} />
+      <pointLight ref={lamp} position={[4.5, 1.25, -3.5]} color="#ffb870" intensity={1.8} distance={2.6} decay={2} />
+      <pointLight ref={glow} position={[3.4, 1.32, -3.0]} color="#e5d6c0" intensity={0.8} distance={2} decay={2} />
 
       {/* Identity books */}
       {books.map((b, i) => (

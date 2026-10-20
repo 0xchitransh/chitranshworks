@@ -5,12 +5,11 @@ import { profile } from './data/profile'
 import { useSyncReducedMotion } from './hooks/useReducedMotion'
 import { useEscapeToHome, useHashSync } from './hooks/useSceneNavigation'
 import { useCapabilityCheck } from './hooks/useWebGLSupport'
-import { hotspotHost } from './scene/InteractiveHotspot'
 import { usePanelOpen, useStage } from './store/useStage'
 import { Controls } from './ui/Controls'
 import { ConventionalPortfolio } from './ui/ConventionalPortfolio'
-import { IntroOverlay } from './ui/IntroOverlay'
 import { JerseyHud } from './ui/JerseyHud'
+import { JourneyMeter } from './ui/JourneyMeter'
 import { LoadingScreen } from './ui/LoadingScreen'
 import { Navigation } from './ui/Navigation'
 import { PanelHost } from './ui/PanelHost'
@@ -29,9 +28,6 @@ function ImmersiveExperience() {
 
   return (
     <main
-      ref={(el) => {
-        hotspotHost.current = el
-      }}
       className="stage"
       data-entered={entered}
       data-section={section}
@@ -47,9 +43,10 @@ function ImmersiveExperience() {
         </Suspense>
       </div>
       <div className="vignette" />
-      <IntroOverlay />
+      <h1 className="sr-only">{profile.name}: {profile.tagline}</h1>
       <Navigation />
       <PanelHost />
+      <JourneyMeter />
       <JerseyHud />
       <Controls />
       <LoadingScreen />

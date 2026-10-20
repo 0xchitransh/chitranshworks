@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react'
+import { useFrame } from '@react-three/fiber'
 import gsap from 'gsap'
 import * as THREE from 'three'
 import { useStage } from '../store/useStage'
@@ -7,6 +8,7 @@ import { HoverGlow, Interactive } from './InteractiveHotspot'
 import { getMaterials } from './materials'
 import { Box } from './primitives'
 import { POS } from './layout'
+import { mood } from './mood'
 import { makeCanvas } from './textures'
 
 /** The whiteboard: a cricket field plan that redraws itself into a product architecture on focus. */
@@ -63,6 +65,10 @@ export function StrategyBoard() {
       .then(() => art.redraw())
       .catch(() => undefined)
   }, [art])
+
+  useFrame(() => {
+    art.mat.emissiveIntensity = 0.18 + 0.2 * mood.area.board
+  })
 
   useEffect(() => {
     const reduced = useStage.getState().reducedMotion

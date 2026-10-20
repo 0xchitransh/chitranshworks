@@ -3,7 +3,8 @@ import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { useStage } from '../store/useStage'
 import { ROOM, SUN_FROM, WIN } from './layout'
-import { mood } from './mood'
+import { input } from './input'
+import { damp, mood } from './mood'
 import { rng } from './textures'
 
 /* -------------------------------------------------------------------------- */
@@ -27,6 +28,7 @@ export function spawnDust(x: number, y: number, z: number, count: number, opts?:
 }
 
 const POOL = 260
+const _c = new THREE.Vector3()
 
 const burstVertex = /* glsl */ `
   attribute float aAlpha;
@@ -151,6 +153,8 @@ const moteVertex = /* glsl */ `
   uniform float uPixel;
   uniform vec3 uBeamOrigin;
   uniform vec3 uBeamDir;
+  uniform vec3 uCursor;
+  uniform float uPush;
   varying float vA;
   void main() {
     vec3 p = position;
@@ -158,6 +162,10 @@ const moteVertex = /* glsl */ `
     p.x += sin(t * 1.3 + aSeed * 6.28) * 0.35;
     p.y += sin(t * 0.9 + aSeed * 12.0) * 0.22 + mod(uTime * 0.012 + aSeed, 1.0) * 0.0;
     p.z += cos(t * 1.1 + aSeed * 3.0) * 0.3;
+
+    // The visitor's pointer gently parts nearby motes.
+    vec3 dc = p - uCursor;
+    p += normalize(dc + vec3(0.0001)) * exp(-dot(dc, dc) * 4.0) * uPush * 0.32;
 
     // Motes are only really visible where the window light crosses them.
     vec3 rel = p - uBeamOrigin;
@@ -208,6 +216,8 @@ function AmbientMotes({ count }: { count: number }) {
         uColor: { value: new THREE.Color('#ffc58a') },
         uBeamOrigin: { value: new THREE.Vector3(WIN.cx, WIN.cy + 0.2, ROOM.zBack) },
         uBeamDir: { value: dir },
+        uCursor: { value: new THREE.Vector3(0, 0, 20) },
+        uPush: { value: 0 },
       },
       transparent: true,
       depthWrite: false,
@@ -224,13 +234,24 @@ function AmbientMotes({ count }: { count: number }) {
     [geo, mat],
   )
 
-  useFrame((frame) => {
-    const reduced = useStage.getState().reducedMotion
+  useFrame((frame, dt) => {
+    const store = useStage.getState()
+    const reduced = store.reducedMotion
     // Reduced motion: motes stay put instead of drifting.
     if (!reduced) mat.uniforms.uTime.value = frame.clock.elapsedTime
+
+    // Cursor ray, three metres in front of the lens, smoothed so the disturbance trails the pointer.
+    const cam = frame.camera
+    _c.set(input.x, input.y, 0.5).unproject(cam).sub(cam.position).normalize().multiplyScalar(3.2).add(cam.position)
+    const cursor = mat.uniforms.uCursor.value as THREE.Vector3
+    cursor.x = damp(cursor.x, _c.x, 6, dt)
+    cursor.y = damp(cursor.y, _c.y, 6, dt)
+    cursor.z = damp(cursor.z, _c.z, 6, dt)
+    const cleaning = store.section === 'about' && store.jersey === 'cleaning'
+    mat.uniforms.uPush.value = damp(mat.uniforms.uPush.value, reduced || input.touch || cleaning ? 0 : 1, 3, dt)
     const fov = (frame.camera as THREE.PerspectiveCamera).fov
     mat.uniforms.uPixel.value = (frame.size.height / (2 * Math.tan((fov * Math.PI) / 360))) * 0.012 * frame.viewport.dpr
-    mat.uniforms.uOpacity.value = (0.35 + 0.65 * mood.reveal) * (1 - mood.twilight * 0.55)
+    mat.uniforms.uOpacity.value = (0.35 + 0.65 * mood.reveal) * (1 - mood.dusk * 0.55)
   })
 
   return <points geometry={geo} material={mat} frustumCulled={false} renderOrder={7} />

@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { isSectionId, type SectionId } from '../data/sections'
+import { HOME_P, journey } from '../scene/cameraState'
 import { useStage } from '../store/useStage'
 
 function sectionFromHash(): SectionId {
@@ -11,7 +12,9 @@ function sectionFromHash(): SectionId {
  * Navigate to a section. The URL hash is the router so browser back/forward
  * walk through the exploration naturally.
  */
-export function goTo(section: SectionId): void {
+export function goTo(section: SectionId, opts: { keepJourney?: boolean } = {}): void {
+  // Choosing "Home" restores the opening view; closing a panel keeps your place on the scroll path.
+  if (section === 'home' && !opts.keepJourney) journey.target = Math.max(journey.min, HOME_P)
   const target = section === 'home' ? '' : `#/${section}`
   const current = window.location.hash === '#/' ? '' : window.location.hash
   if (current !== target) {
@@ -57,7 +60,7 @@ export function useEscapeToHome(): void {
         setProject(null)
         return
       }
-      goTo('home')
+      goTo('home', { keepJourney: true })
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
