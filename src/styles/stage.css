@@ -8,6 +8,9 @@
 .stage__canvas {
   position: absolute !important;
   inset: 0;
+}
+/* Every scene layer hands touch gestures to the camera; panels and menus keep native scrolling. */
+.stage > :not(.panel):not(.nav):not(.controls) {
   touch-action: none;
 }
 .stage__canvas canvas {
@@ -155,74 +158,6 @@
   to {
     transform: translateX(260%);
   }
-}
-
-/* ---------- Intro ---------- */
-.intro {
-  position: absolute;
-  inset: 0;
-  z-index: 15;
-  display: flex;
-  align-items: center;
-  padding: 0 clamp(24px, 7vw, 120px);
-  pointer-events: none;
-  background: linear-gradient(90deg, rgba(5, 5, 6, 0.82) 0%, rgba(5, 5, 6, 0.4) 42%, transparent 70%);
-  opacity: 0;
-  transition:
-    opacity 0.9s var(--ease),
-    transform 0.9s var(--ease),
-    visibility 0s linear 0.9s;
-}
-.intro.is-ready {
-  opacity: 1;
-}
-.intro.is-gone {
-  opacity: 0;
-  transform: translateY(-14px);
-  visibility: hidden;
-}
-.intro__inner {
-  max-width: 860px;
-  pointer-events: auto;
-}
-.intro__name {
-  margin-top: 26px;
-  font-family: var(--font-script);
-  font-weight: 400;
-  font-size: clamp(64px, 8.6vw, 132px);
-  line-height: 1;
-  white-space: nowrap;
-  letter-spacing: 0.01em;
-  color: var(--cream);
-  text-shadow: 0 6px 40px rgba(0, 0, 0, 0.6);
-}
-.intro__tagline {
-  margin-top: 18px;
-  font-family: var(--font-serif);
-  font-style: italic;
-  font-size: clamp(24px, 3vw, 36px);
-  color: var(--amber);
-}
-.intro__roles {
-  margin-top: 16px;
-  font-size: 12px;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--ink-2);
-}
-.intro__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-top: 34px;
-}
-.intro__hint {
-  margin-top: 28px;
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: var(--muted);
 }
 
 /* ---------- Navigation ---------- */
@@ -442,117 +377,6 @@
     overflow: hidden;
     clip: rect(0 0 0 0);
   }
-}
-
-/* ---------- Hotspots ---------- */
-.hotspot {
-  position: relative;
-  display: block;
-  width: 34px;
-  height: 34px;
-  pointer-events: auto;
-  opacity: 1;
-  transition: opacity 0.6s var(--ease);
-}
-.hotspot.is-hidden {
-  opacity: 0;
-  pointer-events: none;
-}
-.hotspot__dot {
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  border: 1.5px solid rgba(232, 117, 53, 0.85);
-  background: rgba(11, 11, 13, 0.55);
-  transition:
-    transform 0.3s var(--ease),
-    border-color 0.3s;
-}
-.hotspot__dot::before {
-  content: '';
-  position: absolute;
-  inset: 10px;
-  border-radius: 50%;
-  background: var(--orange);
-  box-shadow: 0 0 10px rgba(232, 117, 53, 0.55);
-}
-.hotspot__dot::after {
-  content: '';
-  position: absolute;
-  inset: -1.5px;
-  border-radius: 50%;
-  border: 1px solid rgba(232, 117, 53, 0.7);
-  animation: pulse 3s var(--ease) infinite;
-}
-@keyframes pulse {
-  0% {
-    transform: scale(1);
-    opacity: 0.7;
-  }
-  70%,
-  100% {
-    transform: scale(1.9);
-    opacity: 0;
-  }
-}
-.hotspot:hover .hotspot__dot,
-.hotspot.is-hovered .hotspot__dot,
-.hotspot:focus-visible .hotspot__dot {
-  transform: scale(1.12);
-  border-color: var(--amber);
-}
-.hotspot:focus-visible {
-  outline-offset: 6px;
-  border-radius: 50%;
-}
-.hotspot__text {
-  position: absolute;
-  top: 50%;
-  left: 46px;
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  min-width: max-content;
-  padding: 7px 14px 8px;
-  border-radius: 10px;
-  border: 1px solid var(--line);
-  background: rgba(11, 11, 13, 0.72);
-  backdrop-filter: blur(6px);
-  text-align: left;
-  transform: translateY(-50%);
-  transition:
-    opacity 0.35s var(--ease),
-    transform 0.35s var(--ease),
-    border-color 0.3s;
-}
-.hotspot.is-flipped .hotspot__text {
-  left: auto;
-  right: 46px;
-}
-.hotspot.is-compact .hotspot__text {
-  opacity: 0;
-  transform: translate(-6px, -50%);
-  pointer-events: none;
-}
-.hotspot.is-compact:hover .hotspot__text,
-.hotspot.is-compact.is-hovered .hotspot__text,
-.hotspot.is-compact:focus-visible .hotspot__text {
-  opacity: 1;
-  transform: translate(0, -50%);
-}
-.hotspot.is-hovered .hotspot__text {
-  border-color: rgba(232, 117, 53, 0.6);
-}
-.hotspot__label {
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--cream);
-}
-.hotspot__sub {
-  font-size: 12px;
-  color: var(--muted);
 }
 
 /* ---------- Jersey HUD ---------- */
@@ -790,5 +614,61 @@
   }
   .panel__scroll {
     padding: 20px 20px calc(40px + env(safe-area-inset-bottom));
+  }
+}
+
+/* ---------- Journey meter ---------- */
+.meter {
+  position: absolute;
+  z-index: 18;
+  bottom: 22px;
+  left: calc(50% + var(--rail-w) / 2);
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.6s var(--ease);
+}
+.stage[data-section='home'] .meter {
+  opacity: 1;
+}
+.meter__label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--muted);
+  opacity: calc(1 - var(--journey, 0) * 4);
+}
+.meter__track {
+  position: relative;
+  width: 132px;
+  height: 2px;
+  background: var(--line);
+  border-radius: 2px;
+}
+.meter__fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 100%;
+  border-radius: 2px;
+  background: var(--orange);
+  transform-origin: left;
+  transform: scaleX(var(--journey, 0));
+}
+.meter__tick {
+  position: absolute;
+  top: -3px;
+  width: 1px;
+  height: 8px;
+  background: var(--line-strong);
+}
+@media (max-width: 1099px) {
+  .meter {
+    left: 50%;
+    bottom: 14px;
   }
 }

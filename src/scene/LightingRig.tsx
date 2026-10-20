@@ -48,7 +48,7 @@ export function LightingRig() {
 
   useFrame((_, dt) => {
     const s = useStage.getState()
-    const t = mood.twilight
+    const t = mood.dusk
     const r = mood.reveal
     if (sun.current) {
       sun.current.intensity = THREE.MathUtils.lerp(3.6, 0.45, t) * (0.55 + 0.45 * r) * (1 + mood.lift * 0.15)
@@ -61,7 +61,7 @@ export function LightingRig() {
     const aboutFocus = s.section === 'about' ? 1 : 0
     if (locker.current) {
       locker.current.intensity =
-        (7 + aboutFocus * 4 + mood.lift * 3) * (0.65 + 0.35 * r) * (1 - t * 0.5)
+        (7 + aboutFocus * 4 + mood.area.jersey * 3.2 + mood.lift * 3) * (0.65 + 0.35 * r) * (1 - t * 0.5)
     }
     if (shelf.current) shelf.current.intensity = (3.4 + mood.lift * 1.2) * (0.6 + 0.4 * r)
     const ceil = (6.5 + mood.lift * 2) * (0.5 + 0.5 * r) * (1 - t * 0.45)

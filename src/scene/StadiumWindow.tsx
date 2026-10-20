@@ -79,7 +79,7 @@ function Sky() {
   )
   useEffect(() => () => mat.dispose(), [mat])
   useFrame((s) => {
-    mat.uniforms.uTwilight.value = mood.twilight
+    mat.uniforms.uTwilight.value = mood.dusk
     mat.uniforms.uTime.value = s.clock.elapsedTime
   })
   return (
@@ -204,7 +204,7 @@ function Stadium() {
   )
 
   useFrame(() => {
-    const t = mood.twilight
+    const t = mood.dusk
     assets.standsMat.color.copy(WARM_STANDS).lerp(COOL_STANDS, t)
     assets.groundMat.color.copy(WARM_GROUND).lerp(COOL_GROUND, t)
     assets.glowMat.opacity = 0.55 + t * 0.4

@@ -78,7 +78,7 @@ export function PanelHost() {
         <span className="panel__crumb">
           <span className="panel__idx">{meta.index}</span> {meta.title}
         </span>
-        <button type="button" className="icon-btn" onClick={() => navigate('home')} aria-label="Close and return to the pavilion">
+        <button type="button" className="icon-btn" onClick={() => navigate('home', { keepJourney: true })} aria-label="Close and return to the pavilion">
           <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
             <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
           </svg>

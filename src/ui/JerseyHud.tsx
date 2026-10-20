@@ -75,7 +75,7 @@ export function JerseyHud() {
           <button type="button" className="btn btn--primary" onClick={() => finishJersey(true)} disabled={done}>
             Skip interaction
           </button>
-          <button type="button" className="btn btn--ghost" onClick={() => goTo('home')}>
+          <button type="button" className="btn btn--ghost" onClick={() => goTo('home', { keepJourney: true })}>
             Back
           </button>
         </div>

@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, type ReactNode } from 'react'
 import { useFrame, type ThreeEvent } from '@react-three/fiber'
-import { Html } from '@react-three/drei'
 import * as THREE from 'three'
 import type { SectionId } from '../data/sections'
 import { goTo } from '../hooks/useSceneNavigation'
@@ -8,14 +7,6 @@ import { useStage } from '../store/useStage'
 import { radialTexture } from './textures'
 
 type V3 = [number, number, number]
-
-/**
- * Stable DOM target for hotspot overlays. drei's <Html> tears down and rebuilds its
- * React root whenever its default target changes, which can leave hotspots empty.
- */
-export const hotspotHost: { current: HTMLElement | null } = { current: null }
-const HTML_STYLE = { pointerEvents: 'none' } as const
-const HTML_RANGE: [number, number] = [12, 0]
 
 function setCursor(value: string) {
   document.body.style.cursor = value
@@ -118,57 +109,4 @@ export function HoverGlow({
   })
 
   return <sprite position={position} scale={[size[0], size[1], 1]} material={mat} renderOrder={6} />
-}
-
-interface HotspotProps {
-  id: string
-  section: SectionId
-  position: V3
-  label: string
-  sub: string
-  onSelect?: () => void
-  /** Place label on the left of the dot. */
-  flip?: boolean
-}
-
-/** Real <button> anchored to a 3D point: keyboard focusable, labelled, and mirrors 3D hover. */
-export function Hotspot({ id, section, position, label, sub, onSelect, flip }: HotspotProps) {
-  const entered = useStage((s) => s.entered)
-  const current = useStage((s) => s.section)
-  const hovered = useStage((s) => s.hovered === id)
-  const setHovered = useStage((s) => s.setHovered)
-  const immersiveReady = useStage((s) => s.sceneReady)
-
-  // Hidden once a section is focused (the content panel takes over).
-  const visible = immersiveReady && current === 'home'
-  const compact = !entered
-
-  return (
-    <Html
-      position={position}
-      center
-      zIndexRange={HTML_RANGE}
-      style={HTML_STYLE}
-      portal={hotspotHost.current ? (hotspotHost as React.RefObject<HTMLElement>) : undefined}
-    >
-      <button
-        type="button"
-        className={`hotspot${hovered ? ' is-hovered' : ''}${compact ? ' is-compact' : ''}${visible ? '' : ' is-hidden'}${flip ? ' is-flipped' : ''}`}
-        aria-label={`${label}: ${sub}`}
-        tabIndex={visible ? 0 : -1}
-        aria-hidden={visible ? undefined : true}
-        onPointerEnter={() => setHovered(id)}
-        onPointerLeave={() => useStage.getState().hovered === id && setHovered(null)}
-        onFocus={() => setHovered(id)}
-        onBlur={() => useStage.getState().hovered === id && setHovered(null)}
-        onClick={() => (onSelect ? onSelect() : goTo(section))}
-      >
-        <span className="hotspot__dot" aria-hidden="true" />
-        <span className="hotspot__text">
-          <span className="hotspot__label">{label}</span>
-          <span className="hotspot__sub">{sub}</span>
-        </span>
-      </button>
-    </Html>
-  )
 }

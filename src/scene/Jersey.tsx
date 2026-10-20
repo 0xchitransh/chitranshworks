@@ -152,6 +152,13 @@ export function Jersey() {
     if (done.current) assets.dirtMat.opacity = 0
   }, [assets])
 
+  // Selecting the jersey nudges the hanger and stirs a little dust; it never moves the shirt itself.
+  useEffect(() => {
+    if (!cleaning) return
+    spring.current.vel += 0.22
+    spawnDust(POS.jersey[0], POS.jersey[1], POS.jersey[2] + 0.12, 26, { spread: 0.35, speed: 0.1, life: 2, lift: 0.05 })
+  }, [cleaning])
+
   const complete = (fast: boolean) => {
     if (done.current) return
     done.current = true

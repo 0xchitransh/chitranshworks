@@ -1,4 +1,5 @@
 import gsap from 'gsap'
+import * as THREE from 'three'
 import { MOBILE_BREAKPOINT, RAIL_BREAKPOINT, RAIL_WIDTH } from '../hooks/useViewport'
 import { isPanelOpen, useStage } from '../store/useStage'
 
@@ -56,8 +57,6 @@ export const rig = {
   /** Fraction of viewport size the view window is shifted by (keeps subject clear of the panel). */
   shiftX: 0,
   shiftY: 0,
-  /** Horizontal look offset for drag-to-look on touch devices (home view only). */
-  panX: 0,
 }
 
 export interface Layout {
@@ -158,7 +157,117 @@ export function fitPose(pose: Pose, layout: Layout): Target {
   }
 }
 
+/* -------------------------------------------------------------------------- */
+/* Scroll journey: one continuous spline through the room                      */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Keyframes along the scroll path. They are spaced evenly on the spline
+ * (t = i / 5), so progress 0 = intro, 0.2 = pavilion, 0.4 = jersey, 0.6 = strategy
+ * board, 0.8 = workstation, 1 = window. The camera travels through the room on a
+ * Catmull-Rom curve, so nearby objects pass at a different rate from the back wall.
+ */
+export const JOURNEY_KEYS: Pose[] = [
+  POSES.intro,
+  POSES.home,
+  { pos: [-2.0, 1.85, 0.8], look: [-2.6, 1.7, -3.6], fov: 40, w: 3.4, h: 2.6 },
+  { pos: [1.3, 2.05, 0.5], look: [2.0, 2.1, -3.9], fov: 40, w: 3.8, h: 2.7 },
+  { pos: [3.0, 1.75, 0.6], look: [3.6, 1.2, -3.5], fov: 38, w: 3.4, h: 2.5 },
+  { pos: [4.0, 2.0, -0.3], look: [4.8, 2.3, -4.5], fov: 44, w: 3.8, h: 3.1 },
+]
+export const HOME_P = 1 / (JOURNEY_KEYS.length - 1)
+
+/** Scroll state. `target` is where input wants to be; `p` is the smoothed camera position on the path. */
+export const journey = {
+  p: 0,
+  target: 0,
+  /** Lowest reachable progress (the intro is not revisited once entered). */
+  min: 0,
+  /** While true a programmatic tween owns `target` and `p` follows it exactly. */
+  direct: false,
+}
+
+/**
+ * The room as the camera sees it: a conservative envelope that keeps the lens
+ * clear of the walls, the locker bank, the desk and every prop, whatever the
+ * pointer or scroll inputs add on top of the authored path.
+ */
+export const ENVELOPE = { x0: -5.3, x1: 5.3, y0: 1.2, y1: 3.6, z0: -2.8, z1: 9.6 }
+
+const _pos = new THREE.Vector3()
+const _look = new THREE.Vector3()
+const _misc = new THREE.Vector3()
+let curves: { pos: THREE.CatmullRomCurve3; look: THREE.CatmullRomCurve3; misc: THREE.CatmullRomCurve3 } | null = null
+let curveKey = ''
+
+function ensureJourney(): void {
+  const key = `${window.innerWidth}x${window.innerHeight}`
+  if (curves && key === curveKey) return
+  const fitted = JOURNEY_KEYS.map((pose, i) => fitPose(pose, computeLayout(false, i >= 2)))
+  curves = {
+    pos: new THREE.CatmullRomCurve3(fitted.map((f) => new THREE.Vector3(f.px, f.py, f.pz)), false, 'centripetal'),
+    look: new THREE.CatmullRomCurve3(fitted.map((f) => new THREE.Vector3(f.lx, f.ly, f.lz)), false, 'centripetal'),
+    misc: new THREE.CatmullRomCurve3(fitted.map((f) => new THREE.Vector3(f.fov, f.shiftX, f.shiftY)), false, 'centripetal'),
+  }
+  curveKey = key
+}
+
+/** Writes the camera at journey progress `progress` into `out`. */
+export function sampleJourney(progress: number, out: Target): Target {
+  ensureJourney()
+  const t = Math.min(1, Math.max(0, progress))
+  curves!.pos.getPoint(t, _pos)
+  curves!.look.getPoint(t, _look)
+  curves!.misc.getPoint(t, _misc)
+  out.px = _pos.x
+  out.py = _pos.y
+  out.pz = _pos.z
+  out.lx = _look.x
+  out.ly = _look.y
+  out.lz = _look.z
+  out.fov = _misc.x
+  out.shiftX = _misc.y
+  out.shiftY = _misc.z
+  return out
+}
+
+/** Progress along the path whose camera is closest to the current rig (used to resume scrolling without a jump). */
+export function nearestProgress(): number {
+  const probe: Target = { px: 0, py: 0, pz: 0, lx: 0, ly: 0, lz: 0, fov: 0, shiftX: 0, shiftY: 0 }
+  let best = HOME_P
+  let bestD = Infinity
+  for (let i = 0; i <= 80; i++) {
+    const t = HOME_P + ((1 - HOME_P) * i) / 80
+    sampleJourney(t, probe)
+    const d =
+      (probe.px - rig.px) ** 2 + (probe.py - rig.py) ** 2 + (probe.pz - rig.pz) ** 2 +
+      0.5 * ((probe.lx - rig.lx) ** 2 + (probe.ly - rig.ly) ** 2 + (probe.lz - rig.lz) ** 2)
+    if (d < bestD) {
+      bestD = d
+      best = t
+    }
+  }
+  return best
+}
+
+/* -------------------------------------------------------------------------- */
+/* Transitions                                                                 */
+/* -------------------------------------------------------------------------- */
+
 let activeTween: gsap.core.Tween | null = null
+let busy = false
+
+/** True while a deliberate transition (navigation / object selection) owns the camera. */
+export function isCameraBusy(): boolean {
+  return busy
+}
+
+/** Stops the running transition and hands the camera back to the scroll journey. */
+export function cancelFly(): void {
+  activeTween?.kill()
+  activeTween = null
+  busy = false
+}
 
 export interface FlyOptions {
   /** Force an instant move (resize, reduced motion). */
@@ -166,32 +275,88 @@ export interface FlyOptions {
   duration?: number
 }
 
-/** The only function that animates the camera. Interruptible: a new call retargets from the current state. */
+const _home: Target = { px: 0, py: 0, pz: 0, lx: 0, ly: 0, lz: 0, fov: 0, shiftX: 0, shiftY: 0 }
+
+/**
+ * The only function that animates the rig between authored poses. Interruptible:
+ * a new call retargets from the current state. The pavilion / intro views are
+ * simply points on the journey path, so returning home lands exactly where the
+ * scroll position says the camera belongs.
+ */
 export function flyTo(key: PoseKey, panelOpen: boolean, opts: FlyOptions = {}): void {
-  const layout = computeLayout(panelOpen, key !== 'home' && key !== 'intro', key === 'jerseyClean')
-  const t = fitPose(POSES[key], layout)
+  let t: Target
+  if (key === 'home' || key === 'intro') {
+    journey.direct = false
+    gsap.killTweensOf(journey)
+    journey.p = journey.target = key === 'intro' ? Math.min(journey.target, HOME_P) : Math.max(journey.target, journey.min)
+    t = { ...sampleJourney(journey.target, _home) }
+  } else {
+    t = fitPose(POSES[key], computeLayout(panelOpen, true, key === 'jerseyClean'))
+  }
   const reduced = useStage.getState().reducedMotion
   activeTween?.kill()
   activeTween = null
 
-  if (key !== 'home') rig.panX = 0
-
   if (opts.instant || reduced) {
     Object.assign(rig, t)
+    busy = false
     return
   }
   const dist = Math.hypot(t.px - rig.px, t.py - rig.py, t.pz - rig.pz)
   const duration = opts.duration ?? gsap.utils.clamp(0.8, 1.5, 0.7 + dist * 0.12)
+  busy = true
   activeTween = gsap.to(rig, {
     ...t,
     duration,
     ease: 'power3.inOut',
     overwrite: true,
+    onComplete: () => {
+      busy = false
+      activeTween = null
+    },
   })
 }
 
-/** Convenience: fly to wherever the current store state says the camera belongs. */
+let lastKey: PoseKey | null = null
+
+/** Convenience: move the camera to wherever the current store state says it belongs. */
 export function syncCameraToStore(opts: FlyOptions = {}): void {
   const s = useStage.getState()
-  flyTo(poseKeyFor(s), isPanelOpen(s), opts)
+  const key = poseKeyFor(s)
+  const fromJourney = lastKey === null ? false : lastKey === 'home' || lastKey === 'intro'
+  lastKey = key
+  // Moving between intro and pavilion is the scroll journey's job, not a tween.
+  if ((key === 'home' || key === 'intro') && fromJourney && !opts.instant) return
+  flyTo(key, isPanelOpen(s), opts)
+}
+
+/** Brings the journey up to date after the intro has been passed by any route. */
+export function markEntered(): void {
+  journey.min = HOME_P
+  if (journey.target < HOME_P) journey.target = HOME_P
+  if (journey.p < HOME_P) journey.p = HOME_P
+}
+
+/** Enter the pavilion: animate (default) or jump. */
+export function enterJourney(instant: boolean): void {
+  const store = useStage.getState()
+  gsap.killTweensOf(journey)
+  if (instant || store.reducedMotion) {
+    journey.direct = false
+    journey.target = journey.p = HOME_P
+    store.enter()
+    return
+  }
+  journey.direct = true
+  gsap.to(journey, {
+    target: HOME_P,
+    duration: 1.7,
+    ease: 'power2.inOut',
+    onUpdate: () => {
+      journey.p = journey.target
+    },
+    onComplete: () => {
+      journey.direct = false
+    },
+  })
 }

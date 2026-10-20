@@ -153,7 +153,7 @@ function LightShafts() {
   useEffect(() => () => mats.forEach((x) => x.dispose()), [mats])
 
   useFrame(() => {
-    const o = 0.13 * (0.35 + 0.65 * mood.reveal) * (1 - mood.twilight * 0.85) * (1 + mood.lift * 0.2)
+    const o = 0.13 * (0.35 + 0.65 * mood.reveal) * (1 - mood.dusk * 0.85) * (1 + mood.lift * 0.2) * (0.88 + 0.35 * mood.area.window)
     mats.forEach((mm, i) => (mm.opacity = o * [1, 0.8, 0.9][i]))
   })
 

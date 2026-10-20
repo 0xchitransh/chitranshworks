@@ -14,6 +14,10 @@ export const mood = {
   lift: 0,
   /** Local emphasis on the current subject (jersey / board / desk...). */
   focus: 0,
+  /** Combined twilight actually rendered: section-driven plus the scroll journey's approach to the window. */
+  dusk: 0,
+  /** How much of the camera's attention each lit area currently has (0..1). Drives local light pools. */
+  area: { jersey: 0, board: 0, desk: 0, window: 0 },
 }
 
 let tweens: gsap.core.Tween[] = []
